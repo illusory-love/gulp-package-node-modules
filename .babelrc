@@ -1,0 +1,4 @@
+{
+    "presets": [["env", { "useBuiltIns": true }], "es2017", "stage-3"],
+    "plugins": ["transform-runtime"]
+}
