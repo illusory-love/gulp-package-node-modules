@@ -58,17 +58,17 @@ function PackageNodeModule({dev, dist, output, isLiveUpdate}){
 		// 待替换处理的字符内容
 		const replaceStr = file.contents.toString()
 		// 匹配 module 引用语句
-		const replaceReg = /import.+from.+(['"`])[\w-]+\1|require\(\s*(['"`])[\w-]+\2/g
+		const replaceReg = /import.+from.+(['"`])[^\/\.][\w-\/]+\1|require\(\s*(['"`])[^\/\.][\w-\/]+\2/g
 
 		// 匹配文本内的npm模块引用
 		const results = replaceStr.replace(replaceReg,  (n) => {
 				// 获取当前模块名
-			    let moduleName = n.match(/(['"`])[\w-]+\1$/)[0].replace(/^['"`]|['"`]$/g, '')
+			    let moduleName = n.match(/(['"`])[\w-\/]+\1$/)[0].replace(/^['"`]|['"`]$/g, '')
 			    // 目标的文件目录
 				const folderPath  = path.resolve(dist, output || DIRECTORY, moduleName)
 				const modulePath  = path.resolve(MODULEPATH, moduleName)
 				const folderExist = fs.existsSync(folderPath)
-				const moduleExist = fs.existsSync(modulePath)
+				const moduleExist = fs.existsSync(modulePath) || fs.existsSync(`${modulePath}.js`)
 				// 获取当前js文件相对于npm模块的引用路径
 				let   npmDirctory = `${deepStr + DIRECTORY}/${moduleName}/index.js`
 				// 判断是否需要复制模块文件
@@ -87,7 +87,7 @@ function PackageNodeModule({dev, dist, output, isLiveUpdate}){
 					console.warn(`模块 ${moduleName} 不正确或未安装`.yellow)
 				}
 				// 返回替换完成后的模块引用路径
-				return npmDirctory ? n.replace(/(['"`])[\w-]+\1$/, `$1${npmDirctory}$1`) : n
+				return npmDirctory ? n.replace(/(['"`])[\w-\/]+\1$/, `$1${npmDirctory}$1`) : n
 			})
 		// 更新文件内容
 		file.contents = new Buffer(results)

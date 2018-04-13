@@ -83,17 +83,17 @@ var WEBPACKCONFIG = {
 		// 待替换处理的字符内容
 		var replaceStr = file.contents.toString();
 		// 匹配 module 引用语句
-		var replaceReg = /import.+from.+(['"`])[\w-]+\1|require\(\s*(['"`])[\w-]+\2/g;
+		var replaceReg = /import.+from.+(['"`])[^\/\.][\w-\/]+\1|require\(\s*(['"`])[^\/\.][\w-\/]+\2/g;
 
 		// 匹配文本内的npm模块引用
 		var results = replaceStr.replace(replaceReg, function (n) {
 			// 获取当前模块名
-			var moduleName = n.match(/(['"`])[\w-]+\1$/)[0].replace(/^['"`]|['"`]$/g, '');
+			var moduleName = n.match(/(['"`])[\w-\/]+\1$/)[0].replace(/^['"`]|['"`]$/g, '');
 			// 目标的文件目录
 			var folderPath = _path2.default.resolve(dist, output || DIRECTORY, moduleName);
 			var modulePath = _path2.default.resolve(MODULEPATH, moduleName);
 			var folderExist = _fsExtra2.default.existsSync(folderPath);
-			var moduleExist = _fsExtra2.default.existsSync(modulePath);
+			var moduleExist = _fsExtra2.default.existsSync(modulePath) || _fsExtra2.default.existsSync(modulePath + '.js');
 			// 获取当前js文件相对于npm模块的引用路径
 			var npmDirctory = deepStr + DIRECTORY + '/' + moduleName + '/index.js';
 			// 判断是否需要复制模块文件
@@ -114,7 +114,7 @@ var WEBPACKCONFIG = {
 				console.warn(('\u6A21\u5757 ' + moduleName + ' \u4E0D\u6B63\u786E\u6216\u672A\u5B89\u88C5').yellow);
 			}
 			// 返回替换完成后的模块引用路径
-			return npmDirctory ? n.replace(/(['"`])[\w-]+\1$/, '$1' + npmDirctory + '$1') : n;
+			return npmDirctory ? n.replace(/(['"`])[\w-\/]+\1$/, '$1' + npmDirctory + '$1') : n;
 		});
 		// 更新文件内容
 		file.contents = new Buffer(results);
