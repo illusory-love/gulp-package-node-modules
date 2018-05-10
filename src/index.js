@@ -26,6 +26,9 @@ const WEBPACKCONFIG = {
  * @param {boolean} options.isLiveUpdate 是否实时打包更新node_modules指定模块
  */
 function PackageNodeModule({dev, dist, output, isLiveUpdate}){
+	// 声明文件复制数组, 防止同一个文件被复制多次
+	// 因下述 webpack 操作实在找不到符合要求的同步实现
+	let copyFiles = []
 
 	return through2.obj(function(file, enc, cb){
 		if (!dist || !dev) {
@@ -73,7 +76,8 @@ function PackageNodeModule({dev, dist, output, isLiveUpdate}){
 				let   npmDirctory = `${deepStr + DIRECTORY}/${moduleName}/index.js`
 				// 判断是否需要复制模块文件
 				if (moduleExist){
-					if (!folderExist || isLiveUpdate){
+					if ((!folderExist || isLiveUpdate) && !copyFiles.includes(moduleName)){
+						copyFiles.push(moduleName)
 						// 当前文件不存在或指定了实时更新才复制文件
 						// 判断当前模块是否已安装
 						WEBPACKCONFIG.entry = path.join(CWD, MODULEPATH, moduleName)

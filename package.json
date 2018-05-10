@@ -1,6 +1,6 @@
 {
   "name": "gulp-package-node-modules",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "将node_modules指定包打包成一个文件",
   "main": "index.js",
   "scripts": {
@@ -19,7 +19,7 @@
     "gulp-util": "^3.0.8",
     "path": "^0.12.7",
     "through2": "^2.0.3",
-    "webpack": "^4.2.0"
+    "webpack": "^4.8.1"
   },
   "devDependencies": {
     "babel": "^6.23.0",

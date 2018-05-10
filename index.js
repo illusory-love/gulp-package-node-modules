@@ -51,6 +51,9 @@ var WEBPACKCONFIG = {
 	    output = _ref.output,
 	    isLiveUpdate = _ref.isLiveUpdate;
 
+	// 声明文件复制数组, 防止同一个文件被复制多次
+	// 因下述 webpack 操作实在找不到符合要求的同步实现
+	var copyFiles = [];
 
 	return _through2.default.obj(function (file, enc, cb) {
 		if (!dist || !dev) {
@@ -98,7 +101,8 @@ var WEBPACKCONFIG = {
 			var npmDirctory = deepStr + DIRECTORY + '/' + moduleName + '/index.js';
 			// 判断是否需要复制模块文件
 			if (moduleExist) {
-				if (!folderExist || isLiveUpdate) {
+				if ((!folderExist || isLiveUpdate) && !copyFiles.includes(moduleName)) {
+					copyFiles.push(moduleName);
 					// 当前文件不存在或指定了实时更新才复制文件
 					// 判断当前模块是否已安装
 					WEBPACKCONFIG.entry = _path2.default.join(CWD, MODULEPATH, moduleName);
