@@ -2,6 +2,7 @@ import through2 from 'through2'
 import gutil from 'gulp-util'
 import fs from 'fs-extra'
 import path from 'path'
+import glob from 'glob'
 import webpack from 'webpack'
 import colors from 'colors'
 
@@ -32,7 +33,7 @@ function PackageNodeModule({dev, dist, npmFolder, isLiveUpdate}){
 	// 因下述 webpack 操作实在找不到符合要求的同步实现
 	const copyFiles  = []
 	// 获取当前小程序项目的配置文件
-	const miniConifg = require(path.join(CWD, dev, 'project.config.json'))
+	const miniConifg = require(path.join(CWD, dev.replace(CWD, ''), 'project.config.json'))
 	// 当前是否是插件开发
 	const isPlugins  = miniConifg.compileType === 'plugin'
 
@@ -72,12 +73,12 @@ function PackageNodeModule({dev, dist, npmFolder, isLiveUpdate}){
 		// 待替换处理的字符内容
 		const replaceStr = file.contents.toString()
 		// 匹配 module 引用语句
-		const replaceReg = /import.+from?.+(['"`])[^\/\.][\w-\/]+\1|require\(\s*(['"`])[^\/\.][\w-\/]+\2/g
+		const replaceReg = /import.+from?.+(['"`])[^\/\.][@\w-\/]+\1|require\(\s*(['"`])[^\/\.][@\w-\/]+\2/g
 
 		// 匹配文本内的npm模块引用
 		const results = replaceStr.replace(replaceReg,  (n) => {
 				// 获取当前模块名
-			    const moduleName  = n.match(/(['"`])([\w-\/]+)\1$/)[2]
+			    const moduleName  = n.match(/(['"`])([@\w-\/]+)\1$/)[2]
 				// 目标的文件目录
 				// 用户指定的输出目录(dist) + 额外的目录 (比如插件开发) + npm文件夹名 (npmFolder 或默认 DIRECTORY) + 当前模块名 (moduleName)
 				const folderPath  = path.resolve(dist, extraFolder, npmFolder || DIRECTORY, moduleName)
@@ -86,11 +87,11 @@ function PackageNodeModule({dev, dist, npmFolder, isLiveUpdate}){
 				// 模块输出目录是否存在
 				const folderExist = fs.existsSync(folderPath)
 				// 模块源目录是否存在 (模块是否安装z)
-				const moduleExist = fs.existsSync(modulePath)
+				const moduleExist = glob.sync(`${modulePath}?(?(index).js)`)
 				// 获取当前js文件相对于npm模块的引用路径
 				let   npmDirctory = ''
 				// 判断是否需要复制模块文件
-				if (moduleExist){
+				if (moduleExist[0]){
 					// 记录当前需要替换的模块路径
 					npmDirctory = `${deepStr + DIRECTORY}/${moduleName}/index.js`;
 					// 是否符合复制文件的要求
@@ -109,7 +110,7 @@ function PackageNodeModule({dev, dist, npmFolder, isLiveUpdate}){
 					console.warn(`模块 ${moduleName} 不正确或未安装`.yellow)
 				}
 				// 返回替换完成后的模块引用路径
-				return npmDirctory ? n.replace(/(['"`])[\w-\/]+\1$/, `$1${npmDirctory}$1`) : n
+				return npmDirctory ? n.replace(/(['"`])[@\w-\/]+\1$/, `$1${npmDirctory}$1`) : n
 			})
 		// 更新文件内容
 		file.contents = new Buffer(results)

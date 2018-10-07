@@ -16,6 +16,10 @@ var _path = require('path');
 
 var _path2 = _interopRequireDefault(_path);
 
+var _glob = require('glob');
+
+var _glob2 = _interopRequireDefault(_glob);
+
 var _webpack = require('webpack');
 
 var _webpack2 = _interopRequireDefault(_webpack);
@@ -57,7 +61,7 @@ var WEBPACKCONFIG = {
 	// 因下述 webpack 操作实在找不到符合要求的同步实现
 	var copyFiles = [];
 	// 获取当前小程序项目的配置文件
-	var miniConifg = require(_path2.default.join(CWD, dev, 'project.config.json'));
+	var miniConifg = require(_path2.default.join(CWD, dev.replace(CWD, ''), 'project.config.json'));
 	// 当前是否是插件开发
 	var isPlugins = miniConifg.compileType === 'plugin';
 
@@ -96,12 +100,12 @@ var WEBPACKCONFIG = {
 		// 待替换处理的字符内容
 		var replaceStr = file.contents.toString();
 		// 匹配 module 引用语句
-		var replaceReg = /import.+from?.+(['"`])[^\/\.][\w-\/]+\1|require\(\s*(['"`])[^\/\.][\w-\/]+\2/g;
+		var replaceReg = /import.+from?.+(['"`])[^\/\.][@\w-\/]+\1|require\(\s*(['"`])[^\/\.][@\w-\/]+\2/g;
 
 		// 匹配文本内的npm模块引用
 		var results = replaceStr.replace(replaceReg, function (n) {
 			// 获取当前模块名
-			var moduleName = n.match(/(['"`])([\w-\/]+)\1$/)[2];
+			var moduleName = n.match(/(['"`])([@\w-\/]+)\1$/)[2];
 			// 目标的文件目录
 			// 用户指定的输出目录(dist) + 额外的目录 (比如插件开发) + npm文件夹名 (npmFolder 或默认 DIRECTORY) + 当前模块名 (moduleName)
 			var folderPath = _path2.default.resolve(dist, extraFolder, npmFolder || DIRECTORY, moduleName);
@@ -110,11 +114,11 @@ var WEBPACKCONFIG = {
 			// 模块输出目录是否存在
 			var folderExist = _fsExtra2.default.existsSync(folderPath);
 			// 模块源目录是否存在 (模块是否安装z)
-			var moduleExist = _fsExtra2.default.existsSync(modulePath);
+			var moduleExist = _glob2.default.sync(modulePath + '?(?(index).js)');
 			// 获取当前js文件相对于npm模块的引用路径
 			var npmDirctory = '';
 			// 判断是否需要复制模块文件
-			if (moduleExist) {
+			if (moduleExist[0]) {
 				// 记录当前需要替换的模块路径
 				npmDirctory = deepStr + DIRECTORY + '/' + moduleName + '/index.js';
 				// 是否符合复制文件的要求
@@ -135,7 +139,7 @@ var WEBPACKCONFIG = {
 				console.warn(('\u6A21\u5757 ' + moduleName + ' \u4E0D\u6B63\u786E\u6216\u672A\u5B89\u88C5').yellow);
 			}
 			// 返回替换完成后的模块引用路径
-			return npmDirctory ? n.replace(/(['"`])[\w-\/]+\1$/, '$1' + npmDirctory + '$1') : n;
+			return npmDirctory ? n.replace(/(['"`])[@\w-\/]+\1$/, '$1' + npmDirctory + '$1') : n;
 		});
 		// 更新文件内容
 		file.contents = new Buffer(results);

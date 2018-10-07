@@ -30,6 +30,18 @@ gulp.src(`./src/**/*.js`)
 
 # 更新
 
+v 1.1.6 
+
+`Fixed` 模块无法打包的问题
+
+v 1.1.5
+
+`Fixed` 修复windows下文件 **project.config.json** 路径错误的问题
+
+v 1.1.4
+
+`Imporve` 修复以 @ 开头的模块无法匹配的问题
+
 v 1.1.3
 
 `Imporve` 兼容小程序插件开发的项目目录结构
