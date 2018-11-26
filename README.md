@@ -5,7 +5,6 @@
 
 因此需要将代码中使用的`npm`包复制到项目中（因小程序对项目大小有控制，故将指定`npm`包打包成一个文件至小程序项目）以便再次 `require`
 
-
 # 使用
 
 ```bash
@@ -19,6 +18,7 @@ const packageConfig = {
     dev: './src',       // 项目开发目录
     dist: './dist',     // 项目打包目录
     output: './npm',    // node_modules打包后的存放目录
+    modules: ['utils'], // 自定义模块目录 (此设置不会生成新文件,仅根据文件层级修改模块引用路径; 如: require('lib/request') -> require('../../utils/lib/request'))
     isLiveUpdate: false // 是否实时更新（不管包是否已复制）
 }
 
@@ -29,6 +29,10 @@ gulp.src(`./src/**/*.js`)
 
 
 # 更新
+
+v 1.2.0
+
+`New` 增加 `modules` 参数 (自定义模块目录)
 
 v 1.1.3
 

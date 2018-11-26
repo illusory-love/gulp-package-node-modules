@@ -16,6 +16,10 @@ var _path = require('path');
 
 var _path2 = _interopRequireDefault(_path);
 
+var _glob = require('glob');
+
+var _glob2 = _interopRequireDefault(_glob);
+
 var _webpack = require('webpack');
 
 var _webpack2 = _interopRequireDefault(_webpack);
@@ -44,20 +48,22 @@ var WEBPACKCONFIG = {
   * 解析打包node_modules模块并替换文件引用 
   * @param {string} options.dev           开发根目录
   * @param {string} options.dist          项目打包根目录
-  * @param {string} options.npmFolder   打包后的模块存放的目录
+  * @param {string} options.npmFolder     打包后的模块存放的目录
+  * @param {array}  options.modules       除node_modules外的模块目录
   * @param {boolean} options.isLiveUpdate 是否实时打包更新node_modules指定模块
   */
 };function PackageNodeModule(_ref) {
 	var dev = _ref.dev,
 	    dist = _ref.dist,
 	    npmFolder = _ref.npmFolder,
+	    modules = _ref.modules,
 	    isLiveUpdate = _ref.isLiveUpdate;
 
 	// 声明文件复制数组, 防止同一个文件被复制多次
 	// 因下述 webpack 操作实在找不到符合要求的同步实现
 	var copyFiles = [];
 	// 获取当前小程序项目的配置文件
-	var miniConifg = require(_path2.default.join(CWD, dev, 'project.config.json'));
+	var miniConifg = require(_path2.default.join(dev, 'project.config.json'));
 	// 当前是否是插件开发
 	var isPlugins = miniConifg.compileType === 'plugin';
 
@@ -81,9 +87,9 @@ var WEBPACKCONFIG = {
 		// 当前文件的开发目录路径, 由 src 里的 base 决定
 		var fileBasePath = _path2.default.resolve(file.base);
 		// 去除开发目录的绝对路径
-		var fileDeep = fileFullPath.replace(fileBasePath, '');
+		var fileDeep = fileFullPath.replace(fileBasePath, '').replace(/\\/g, '/');
 		// 计算出当前文件相对开发目录的层级数
-		var deepArray = fileDeep.split(/\/|\\/);
+		var deepArray = fileDeep.split('/');
 		var deep = deepArray.length;
 		// 得到相对路径的返回层级数 (插件开发相对小程序开发在指定的开发目录下多了一层固定目录, 因此 -3 ))
 		// /npm/xxx/xx/index.js
@@ -96,25 +102,25 @@ var WEBPACKCONFIG = {
 		// 待替换处理的字符内容
 		var replaceStr = file.contents.toString();
 		// 匹配 module 引用语句
-		var replaceReg = /import.+from?.+(['"`])[^\/\.][\w-\/]+\1|require\(\s*(['"`])[^\/\.][\w-\/]+\2/g;
+		var replaceReg = /import.+from?.+(['"`])[^\/\.][\w-\@/]+\1|require\(\s*(['"`])[^\/\.][\w-\@/]+\2/g;
 
 		// 匹配文本内的npm模块引用
 		var results = replaceStr.replace(replaceReg, function (n) {
 			// 获取当前模块名
-			var moduleName = n.match(/(['"`])([\w-\/]+)\1$/)[2];
+			var moduleName = n.match(/(['"`])([\w-\@/]+)\1$/)[2];
 			// 目标的文件目录
 			// 用户指定的输出目录(dist) + 额外的目录 (比如插件开发) + npm文件夹名 (npmFolder 或默认 DIRECTORY) + 当前模块名 (moduleName)
 			var folderPath = _path2.default.resolve(dist, extraFolder, npmFolder || DIRECTORY, moduleName);
 			// 模块源目录
-			var modulePath = _path2.default.resolve(MODULEPATH, moduleName);
+			var modulePath1 = _path2.default.resolve(CWD, MODULEPATH, moduleName);
+			var modulePath2 = modulePath1.split('/').slice(0, -1).join('/');
 			// 模块输出目录是否存在
 			var folderExist = _fsExtra2.default.existsSync(folderPath);
-			// 模块源目录是否存在 (模块是否安装z)
-			var moduleExist = _fsExtra2.default.existsSync(modulePath);
 			// 获取当前js文件相对于npm模块的引用路径
 			var npmDirctory = '';
+			// 模块源目录是否存在 (模块是否安装)
 			// 判断是否需要复制模块文件
-			if (moduleExist) {
+			if (_fsExtra2.default.existsSync(modulePath1) || _fsExtra2.default.existsSync(modulePath2)) {
 				// 记录当前需要替换的模块路径
 				npmDirctory = deepStr + DIRECTORY + '/' + moduleName + '/index.js';
 				// 是否符合复制文件的要求
@@ -132,10 +138,25 @@ var WEBPACKCONFIG = {
 					});
 				}
 			} else {
-				console.warn(('\u6A21\u5757 ' + moduleName + ' \u4E0D\u6B63\u786E\u6216\u672A\u5B89\u88C5').yellow);
+				// 处理可能存在的自定义模块
+				var hasModule = false;
+				modules.forEach(function (n, i) {
+					var mPath = _path2.default.join(deepStr, n, moduleName);
+					var bPath = _path2.default.join(dev, n, moduleName);
+					var fname = moduleName.split('/').slice(-1)[0];
+					var gPath = bPath + '?(?(**{index,' + fname + '}).{js,json})';
+					var files = _glob2.default.sync(gPath);
+					// 判断当前文件是否存在
+					if (files[0]) {
+						hasModule = true;
+						npmDirctory = mPath;
+					}
+				});
+
+				hasModule || console.warn(('\u6A21\u5757 ' + moduleName + ' \u4E0D\u6B63\u786E\u6216\u672A\u5B89\u88C5').yellow);
 			}
 			// 返回替换完成后的模块引用路径
-			return npmDirctory ? n.replace(/(['"`])[\w-\/]+\1$/, '$1' + npmDirctory + '$1') : n;
+			return npmDirctory ? n.replace(/(['"`])[\w-\@/]+\1$/, '$1' + npmDirctory + '$1') : n;
 		});
 		// 更新文件内容
 		file.contents = new Buffer(results);
