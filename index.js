@@ -63,7 +63,7 @@ var WEBPACKCONFIG = {
 	// 因下述 webpack 操作实在找不到符合要求的同步实现
 	var copyFiles = [];
 	// 获取当前小程序项目的配置文件
-	var miniConifg = require(_path2.default.join(dev, 'project.config.json'));
+	var miniConifg = require(_path2.default.join(dev.replace(CWD, ''), 'project.config.json'));
 	// 当前是否是插件开发
 	var isPlugins = miniConifg.compileType === 'plugin';
 

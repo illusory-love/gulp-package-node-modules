@@ -34,7 +34,7 @@ function PackageNodeModule({dev, dist, npmFolder, modules, isLiveUpdate}){
 	// 因下述 webpack 操作实在找不到符合要求的同步实现
 	const copyFiles  = []
 	// 获取当前小程序项目的配置文件
-	const miniConifg = require(path.join(dev, 'project.config.json'))
+	const miniConifg = require(path.join(dev.replace(CWD, ''), 'project.config.json'))
 	// 当前是否是插件开发
 	const isPlugins  = miniConifg.compileType === 'plugin'
 
