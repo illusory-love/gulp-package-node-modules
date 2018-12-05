@@ -5,7 +5,9 @@ import path from 'path'
 import glob from 'glob'
 import webpack from 'webpack'
 import colors from 'colors'
+import os from 'os'
 
+const isWin32     = os.platform() === 'win32'
 const PluginError = gutil.PluginError
 const PLUGIN_NAME = require('./package.json').name
 const CWD         = process.cwd()
@@ -34,7 +36,8 @@ function PackageNodeModule({dev, dist, npmFolder, modules, isLiveUpdate}){
 	// 因下述 webpack 操作实在找不到符合要求的同步实现
 	const copyFiles  = []
 	// 获取当前小程序项目的配置文件
-	const miniConifg = require(path.join(dev.replace(CWD, ''), 'project.config.json'))
+	const devPath    = isWin32 ? dev : dev.replace(CWD, '')
+	const miniConifg = require(path.join(devPath, 'project.config.json'))
 	// 当前是否是插件开发
 	const isPlugins  = miniConifg.compileType === 'plugin'
 
@@ -84,15 +87,14 @@ function PackageNodeModule({dev, dist, npmFolder, modules, isLiveUpdate}){
 			// 用户指定的输出目录(dist) + 额外的目录 (比如插件开发) + npm文件夹名 (npmFolder 或默认 DIRECTORY) + 当前模块名 (moduleName)
 			const folderPath  = path.resolve(dist, extraFolder, npmFolder || DIRECTORY, moduleName)
 			// 模块源目录
-			const modulePath1 = path.resolve(CWD, MODULEPATH, moduleName)
-			const modulePath2 = modulePath1.split('/').slice(0, -1).join('/')
+			const modulePath  = path.resolve(CWD, MODULEPATH, moduleName).replace(/\\/g, '/') + '?(?(**index).js)'
 			// 模块输出目录是否存在
 			const folderExist = fs.existsSync(folderPath)
 			// 获取当前js文件相对于npm模块的引用路径
 			let   npmDirctory = ''
 			// 模块源目录是否存在 (模块是否安装)
 			// 判断是否需要复制模块文件
-			if (fs.existsSync(modulePath1) || fs.existsSync(modulePath2)){
+			if (glob.sync(modulePath)[0]){
 				// 记录当前需要替换的模块路径
 				npmDirctory = `${deepStr + DIRECTORY}/${moduleName}/index.js`;
 				// 是否符合复制文件的要求
@@ -107,7 +109,9 @@ function PackageNodeModule({dev, dist, npmFolder, modules, isLiveUpdate}){
 					// 目前无法应用同步操作, 只能后面再想想看是否能解决同步的单号
 					webpack(WEBPACKCONFIG, (err, stat) => console.log(`模块 ${moduleName} 复制成功`.cyan))
 				}
-			} else {
+			}
+			// 只有传递了此变量才进行处理 
+			else if (modules){
 				// 处理可能存在的自定义模块
 				let hasModule = false;
 				modules.forEach((n, i) => {

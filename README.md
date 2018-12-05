@@ -30,6 +30,11 @@ gulp.src(`./src/**/*.js`)
 
 # 更新
 
+v 1.2.2
+
+`Fixed` 修复 `modules` 判断错误
+`New` 增加 `windows` 下的路径处理
+
 v 1.2.1
 
 `Fixed` 合并分支解决冲突
