@@ -30,6 +30,10 @@ gulp.src(`./src/**/*.js`)
 
 # 更新
 
+v 1.2.3
+
+`Fixed` 将 \ 替换成 /
+
 v 1.2.2
 
 `Fixed` 修复 `modules` 判断错误

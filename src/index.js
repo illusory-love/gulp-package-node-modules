@@ -130,7 +130,7 @@ function PackageNodeModule({dev, dist, npmFolder, modules, isLiveUpdate}){
 				hasModule || console.warn(`模块 ${moduleName} 不正确或未安装`.yellow)
 			}
 			// 返回替换完成后的模块引用路径
-			return npmDirctory ? n.replace(/(['"`])[\w-\@/]+\1$/, `$1${npmDirctory}$1`) : n
+			return npmDirctory ? n.replace(/(['"`])[\w-\@/]+\1$/, `$1${npmDirctory}$1`).replace(/\\/g, '/') : n
 		})
 		// 更新文件内容
 		file.contents = new Buffer(results)
